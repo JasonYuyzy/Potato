@@ -1,1 +1,1 @@
-# Potato
+# SM_MachineLearning Coursework
