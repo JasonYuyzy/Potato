@@ -31,12 +31,17 @@ mpl.rc('ytick', labelsize=12)
 # Download the data
 import urllib.request
 DOWNLOAD_ROOT = "https://raw.githubusercontent.com/ageron/handson-ml2/master/"
+#DOWNLOAD_ROOT = "https://analyse.kmi.open.ac.uk/open_dataset"
 os.makedirs(datapath, exist_ok=True)
 for filename in ("oecd_bli_2015.csv", "gdp_per_capita.csv"):
+#for filename in ("courses.csv", "vle.csv"):
     print("Downloading", filename)
     url = DOWNLOAD_ROOT + "datasets/lifesat/" + filename
+    #url = DOWNLOAD_ROOT + "datasets/testset" + filename
     urllib.request.urlretrieve(url, datapath + filename)
 
+print(datapath)
+exit(0)
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
