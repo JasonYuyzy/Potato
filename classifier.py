@@ -23,6 +23,8 @@ mpl.rc('ytick', labelsize=12)
 #Where to save the CSV files
 DATA_PATH = os.path.join("datasets", "students_data")
 
+'''
+#download the data files
 import zipfile
 import urllib.request
 DOWNLOAD_ROOT = "https://analyse.kmi.open.ac.uk/open_dataset/download"
@@ -34,17 +36,7 @@ urllib.request.urlretrieve(DOWNLOAD_ROOT, tgz_path)
 student_file = zipfile.ZipFile(tgz_path)
 student_file.extractall(path=DATA_PATH)
 student_file.close()
-
 '''
-
-for filename in ("studentInfo.csv", "courses.csv"):
-    print("Downloading", filename)
-    # + "datasets/lifesat/" add if needed
-    url = DOWNLOAD_ROOT + filename
-'''
-
-print("finished")
-exit(0)
 # Where to save the figures
 IMAGES_PATH = os.path.join(".", "images", "data_figures")
 os.makedirs(IMAGES_PATH, exist_ok=True)
@@ -64,15 +56,12 @@ warnings.filterwarnings(action="ignore", message="^internal gelsd")
 import os
 import tarfile
 
-STUDENT_ROOT = "https://raw.githubusercontent.com/ageron/handson-ml2/master/"
-STUDENT_PATH = os.path.join("datasets", "student")
-STUDENT_URL = STUDENT_ROOT + "datasets/housing/housing.tgz"
 
 #if not os.path.isdir(STUDENT_PATH):
         #os.makedirs(STUDENT_PATH)
 
 import pandas as pd
-def load_student_data(student_path=STUDENT_PATH):
+def load_student_data(student_path=DATA_PATH):
     csv_path = os.path.join(".", student_path, "studentInfo.csv")
     return pd.read_csv(open(csv_path, encoding='utf-8', errors='ignore'))
 
@@ -97,6 +86,8 @@ def create_figure (data):
 np.random.seed(42)
 import numpy as np
 test_ratio = 0.2
+
+#out of order
 def split_set(data, test_ratio):
     shuffled_indices = np.random.permutation(len(data))
     test_set_size = int(len(data) * test_ratio)
@@ -105,7 +96,21 @@ def split_set(data, test_ratio):
     return data.iloc[train_indices], data.iloc[test_indices]
 
 train_set, test_set = split_set(student, test_ratio)
-print(train_set)
-print(test_set)
+'''
+#in order
+import hashlib
+def test_set_check(identifier, test_ratio, hash=hashlib.md5):
+    return bytearray(hash(np.int64(identifier)).digest())[-1] < 256 * test_ratio
+
+def split_train_test_by_id(data, test_ratio, id_column):
+    ids = data[id_column]
+    in_test_set = ids.apply(lambda id_: test_set_check(id_, test_ratio))
+    return data.loc[~in_test_set], data.loc[in_test_set]
+
+student_with_id = student.reset_index()
+train_set, test_set = split_train_test_by_id(student_with_id, 0.2, "index")
+'''
+train_set.to_csv("train.csv")
+test_set.to_csv("test.csv")
 print(len(train_set))
 print(len(test_set))
