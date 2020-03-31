@@ -113,7 +113,7 @@ train_set, test_set = split_train_test_by_id(student_with_id, 0.2, "index")
 train_set.to_csv("train.csv")
 test_set.to_csv("test.csv")
 order = train_set.sort_values('studied_credits',inplace=False,ascending=True)
-t = train_set["code_module"].describe()
+t = train_set["id_student"].describe()
 #conbime two data sets
 bbb0 = train_set.loc[(train_set["code_module"] == 'BBB')]
 bbb1 = train_set.loc[(train_set["code_module"] == 'AAA')]
@@ -121,16 +121,21 @@ bbb=pd.concat([bbb0, bbb1],axis=0,ignore_index=False)
 c = train_set["code_module"].value_counts()
 uni = train_set["code_module"].unique()
 print(train_set["code_module"].describe())
-print(t.dtype)
+print(t.dtype == float)
 for pra in uni:
     print(pra+": ", c[pra])
-print(bbb)
+
+print(bbb.drop(["code_module"],axis=1))
 print(bbb.loc[(bbb["final_result"] == "Pass")]["final_result"].count())
-print(c)
 print(len(test_set))
 head = test_set.head()
 for h in head:
     print(h)
+
+
+def gini_impurity_for_leaf (left_side, total):
+    gini = 1 - (left_side/total)**2 - (1-(left_side/total))**2
+    return gini
 
 def gini_impurity_for_root (data, decision, type):
     gini_group = []
@@ -142,19 +147,60 @@ def gini_impurity_for_root (data, decision, type):
         for choice in uni_list:
             final_list = data.loc[(data[decision] == choice)]
             pass_num = final_list.loc[(final_list["final_result"] == "Pass")]["final_result"].count()
-            unpass_num = count_num[choice] - pass_num
-            gini_impurity = 1 - (pass_num/count_num[choice])**2 - (unpass_num/count_num[choice])**2
-            gini_group.append([final_list,(count_num[choice]/total_num) * gini_impurity])
+            #unpass_num = count_num[choice] - pass_num
+            #gini = gini_impurity_for_leaf (pass_num, count_num[choice])
+            gini = 1 - (pass_num / count_num[choice]) ** 2 - (1 - (pass_num / count_num[choice])) ** 2
+            #gini = 1 - (pass_num/count_num[choice])**2 - (unpass_num/count_num[choice])**2
+            #leaf_group.append([str(pass_num)+"/"+str(total_num-pass_num), gini])
+            gini_group.append([final_list, str(pass_num)+"/"+str(total_num-pass_num), gini, (count_num[choice]/total_num) * gini])
         for member in gini_group:
-            gini_impurity += member[1]
-        return [gini_group[0][0], gini_group[1][0], gini_impurity]
+            gini_impurity += member[3]
+        return gini_group, gini_impurity
+    elif type == float:
+        a = 0
 
-def choose_the_root_with_gini_impurity (data):
-    compare_group = ["", 1]
+#                                            option
+def choose_the_root_with_gini_impurity (data, leaf, gini):
+    new_group = [leaf, gini]
     for head in data.head():
         if head == "final_result":
             break
-        gini_impurity = gini_impurity_for_root (data, head, type)
-        if gini_impurity < compare_group[2]:
-            compare_group = [head, gini_impurity, gini_impurity[0], gini_impurity[1]]
-    result = []
+        info = data[head].describe()
+        gini_group, gini_impurity = gini_impurity_for_root (data, head, info.dtype)
+        if gini_impurity < new_group[1]:
+            new_group = [head, gini_impurity]
+
+    if new_group[0] == leaf and new_group[1] == gini:
+        return [], []
+    else:
+        if leaf == "":
+            draw_leaf = new_group[0]
+        else:
+            redraw_leaf = new_group[0]
+        result = []
+        for re in gini_group:
+            ###########         rest data,                     option, gini
+            result.append([re[0].drop([new_group[0]], axis=1), re[1], re[2]])
+        return result, new_group
+
+def connect_tree (new_root, rest):
+    tree = 0
+    ###   head
+    if new_root[0] not in tree:
+        draw_head = 0
+    option = rest[1]
+    draw_option = 0
+    connection_head_option = 0
+
+'''
+data = train_set
+waiting_list = [[data, "", 1]]
+while True:
+    if waiting_list != []:
+        next = waiting_list[0]
+        rest, new_root = choose_the_root_with_gini_impurity(next[0], next[1], next[2])
+        for re in rest:
+            connect_tree (new_root, rest)
+        for res in rest:
+            waiting_list.append(res)
+'''
