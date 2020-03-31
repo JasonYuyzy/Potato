@@ -86,7 +86,7 @@ def create_figure (data):
 np.random.seed(42)
 import numpy as np
 test_ratio = 0.2
-
+'''
 #out of order
 def split_set(data, test_ratio):
     shuffled_indices = np.random.permutation(len(data))
@@ -109,8 +109,52 @@ def split_train_test_by_id(data, test_ratio, id_column):
 
 student_with_id = student.reset_index()
 train_set, test_set = split_train_test_by_id(student_with_id, 0.2, "index")
-'''
+
 train_set.to_csv("train.csv")
 test_set.to_csv("test.csv")
-print(len(train_set))
+order = train_set.sort_values('studied_credits',inplace=False,ascending=True)
+t = train_set["code_module"].describe()
+#conbime two data sets
+bbb0 = train_set.loc[(train_set["code_module"] == 'BBB')]
+bbb1 = train_set.loc[(train_set["code_module"] == 'AAA')]
+bbb=pd.concat([bbb0, bbb1],axis=0,ignore_index=False)
+c = train_set["code_module"].value_counts()
+uni = train_set["code_module"].unique()
+print(train_set["code_module"].describe())
+print(t.dtype)
+for pra in uni:
+    print(pra+": ", c[pra])
+print(bbb)
+print(bbb.loc[(bbb["final_result"] == "Pass")]["final_result"].count())
+print(c)
 print(len(test_set))
+head = test_set.head()
+for h in head:
+    print(h)
+
+def gini_impurity_for_root (data, decision, type):
+    gini_group = []
+    gini_impurity = 0
+    if type == object:
+        total_num = len(data)
+        count_num = data[decision].value_counts()
+        uni_list = data[decision].unique()
+        for choice in uni_list:
+            final_list = data.loc[(data[decision] == choice)]
+            pass_num = final_list.loc[(final_list["final_result"] == "Pass")]["final_result"].count()
+            unpass_num = count_num[choice] - pass_num
+            gini_impurity = 1 - (pass_num/count_num[choice])**2 - (unpass_num/count_num[choice])**2
+            gini_group.append([final_list,(count_num[choice]/total_num) * gini_impurity])
+        for member in gini_group:
+            gini_impurity += member[1]
+        return [gini_group[0][0], gini_group[1][0], gini_impurity]
+
+def choose_the_root_with_gini_impurity (data):
+    compare_group = ["", 1]
+    for head in data.head():
+        if head == "final_result":
+            break
+        gini_impurity = gini_impurity_for_root (data, head, type)
+        if gini_impurity < compare_group[2]:
+            compare_group = [head, gini_impurity, gini_impurity[0], gini_impurity[1]]
+    result = []
