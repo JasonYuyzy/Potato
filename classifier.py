@@ -113,19 +113,51 @@ train_set, test_set = split_train_test_by_id(student_with_id, 0.2, "index")
 train_set.to_csv("train.csv")
 test_set.to_csv("test.csv")
 order = train_set.sort_values('studied_credits',inplace=False,ascending=True)
-t = train_set["id_student"].describe()
+t = train_set["highest_education"].describe()
 #conbime two data sets
 bbb0 = train_set.loc[(train_set["code_module"] == 'BBB')]
 bbb1 = train_set.loc[(train_set["code_module"] == 'AAA')]
 bbb=pd.concat([bbb0, bbb1],axis=0,ignore_index=False)
-c = train_set["code_module"].value_counts()
-uni = train_set["code_module"].unique()
-print(train_set["code_module"].describe())
-print(t.dtype == float)
-for pra in uni:
-    print(pra+": ", c[pra])
+high = train_set["highest_education"].value_counts()
+high_uni = train_set["highest_education"].unique()
+#print(train_set["highest_education"].describe())
+for pra in high_uni:
+    print(pra+": ", high[pra])
 
-print(bbb.drop(["code_module"],axis=1))
+#need to be fixed
+print(train_set["imd_band"].describe())
+imd = train_set["imd_band"].value_counts()
+print(imd)
+imd_uni = train_set["imd_band"].unique()
+print(imd_uni)
+for pra1 in imd_uni:
+    if type(pra1) == float:
+        continue
+    print(str(pra1)+": ", imd[str(pra1)])
+
+#age band data
+print(train_set["age_band"].describe())
+age = train_set["age_band"].value_counts()
+print(age)
+age_uni = train_set["age_band"].unique()
+print(age_uni)
+for pra2 in age_uni:
+    if type(pra2) == float:
+        continue
+    print(str(pra2)+": ", age[str(pra2)])
+
+#final result data
+print(train_set["final_result"].describe())
+final = train_set["final_result"].value_counts()
+print(final)
+final_uni = train_set["final_result"].unique()
+print(final_uni)
+for pra3 in final_uni:
+    if type(pra3) == float:
+        continue
+    print(str(pra3)+": ", final[str(pra3)])
+
+#print(bbb.drop(["code_module"],axis=1))
 print(bbb.loc[(bbb["final_result"] == "Pass")]["final_result"].count())
 print(len(test_set))
 head = test_set.head()
@@ -176,7 +208,7 @@ def choose_the_root_with_gini_impurity (data, leaf, gini):
         if leaf == "":
             draw_leaf = new_group[0]
         else:
-            redraw_leaf = new_group[0]
+            connect_the_head_leaf = new_group[0]
         result = []
         for re in gini_group:
             ###########         rest data,                     option, gini
