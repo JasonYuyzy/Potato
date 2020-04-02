@@ -113,6 +113,9 @@ train_set, test_set = split_train_test_by_id(student_with_id, 0.2, "index")
 train_set.to_csv("train.csv")
 test_set.to_csv("test.csv")
 order = train_set.sort_values('studied_credits',inplace=False,ascending=True)
+order = order.reset_index()
+order = order.drop(["index", "level_0"], axis=1)
+print("new", order.loc[:0])
 t = train_set["highest_education"].describe()
 #conbime two data sets
 bbb0 = train_set.loc[(train_set["code_module"] == 'BBB')]
@@ -124,10 +127,11 @@ high_uni = train_set["highest_education"].unique()
 for pra in high_uni:
     print(pra+": ", high[pra])
 
+'''
 #need to be fixed
-print(train_set["imd_band"].describe())
+print("\n", train_set["imd_band"].describe())
 imd = train_set["imd_band"].value_counts()
-print(imd)
+#print(imd)
 imd_uni = train_set["imd_band"].unique()
 print(imd_uni)
 for pra1 in imd_uni:
@@ -136,9 +140,9 @@ for pra1 in imd_uni:
     print(str(pra1)+": ", imd[str(pra1)])
 
 #age band data
-print(train_set["age_band"].describe())
+print("\n", train_set["age_band"].describe())
 age = train_set["age_band"].value_counts()
-print(age)
+#print(age)
 age_uni = train_set["age_band"].unique()
 print(age_uni)
 for pra2 in age_uni:
@@ -147,9 +151,9 @@ for pra2 in age_uni:
     print(str(pra2)+": ", age[str(pra2)])
 
 #final result data
-print(train_set["final_result"].describe())
+print("\n", train_set["final_result"].describe())
 final = train_set["final_result"].value_counts()
-print(final)
+#print(final)
 final_uni = train_set["final_result"].unique()
 print(final_uni)
 for pra3 in final_uni:
@@ -157,17 +161,43 @@ for pra3 in final_uni:
         continue
     print(str(pra3)+": ", final[str(pra3)])
 
+#code presentation data
+print("\n", train_set["code_presentation"].describe())
+c_p = train_set["code_presentation"].value_counts()
+#print(c_p)
+c_p_uni = train_set["code_presentation"].unique()
+print(c_p_uni)
+for pra4 in c_p_uni:
+    if type(pra4) == float:
+        continue
+    print(str(pra4)+": ", c_p[str(pra4)])
+
 #print(bbb.drop(["code_module"],axis=1))
-print(bbb.loc[(bbb["final_result"] == "Pass")]["final_result"].count())
-print(len(test_set))
+#print(bbb.loc[(bbb["final_result"] == "Pass")]["final_result"].count())
+#print(len(test_set))
 head = test_set.head()
 for h in head:
     print(h)
-
+'''
 
 def gini_impurity_for_leaf (left_side, total):
     gini = 1 - (left_side/total)**2 - (1-(left_side/total))**2
     return gini
+
+def gini_impurity_for_float (ordered, number):
+    total = len(ordered)
+    first_half = ordered.loc[:number]
+    first_half_pass_num = first_half.loc[(first_half["final_result"] == "Pass")]["final_result"].count()
+    first_half_length = len(first_half)
+    first_half_gini = 1 - (first_half_pass_num/first_half_length) ** 2 - (1 - (first_half_pass_num/first_half_length)) ** 2
+    second_half = ordered.loc[:number]
+    second_half_pass_num = second_half.loc[(second_half["final_result"] == "Pass")]["final_result"].count()
+    second_half_length = len(second_half)
+    second_half_gini = 1 - (second_half_pass_num / second_half_length) ** 2 - (1 - (second_half_pass_num / second_half_length)) ** 2
+    gini_impurity = (first_half_length/total) * first_half_gini + (second_half_length/total) * second_half_gini
+    gini_group = [[first_half, str(first_half_pass_num)+"/"+str(first_half_length), first_half_gini], [second_half, str(first_half_pass_num)+"/"+str(second_half_length), second_half_gini]]
+
+    return gini_impurity, gini_group
 
 def gini_impurity_for_root (data, decision, type):
     gini_group = []
@@ -189,8 +219,17 @@ def gini_impurity_for_root (data, decision, type):
             gini_impurity += member[3]
         return gini_group, gini_impurity
     elif type == float:
-        a = 0
+        ordered = data.sort_values(decision, inplace=False, ascending=True)
+        total_num = len(ordered)
+        gini_impurity = 1
+        for num in range(0, total_num-2):
+            option = decision + " < " + str((data[decision][num]+data[decision[num+1]])/2)
+            new_gini_impurity, new_gini_group = gini_impurity_for_float (ordered, num)
+            if new_gini_impurity < gini_impurity:
+                gini_impurity = new_gini_impurity
+                gini_group = new_gini_group
 
+        return gini_group, gini_impurity
 #                                            option
 def choose_the_root_with_gini_impurity (data, leaf, gini):
     new_group = [leaf, gini]
@@ -201,6 +240,12 @@ def choose_the_root_with_gini_impurity (data, leaf, gini):
         gini_group, gini_impurity = gini_impurity_for_root (data, head, info.dtype)
         if gini_impurity < new_group[1]:
             new_group = [head, gini_impurity]
+
+#####################
+#####################
+###HEAD PROBLEM######
+#####################
+#####################
 
     if new_group[0] == leaf and new_group[1] == gini:
         return [], []
