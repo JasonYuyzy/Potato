@@ -217,7 +217,7 @@ def gini_impurity_for_root (data, decision, type):
             gini_group.append([final_list, str(pass_num)+"/"+str(total_num-pass_num), gini, (count_num[choice]/total_num) * gini])
         for member in gini_group:
             gini_impurity += member[3]
-        return gini_group, gini_impurity
+        return gini_group, gini_impurity, False
     elif type == float:
         ordered = data.sort_values(decision, inplace=False, ascending=True)
         total_num = len(ordered)
@@ -229,7 +229,7 @@ def gini_impurity_for_root (data, decision, type):
                 gini_impurity = new_gini_impurity
                 gini_group = new_gini_group
 
-        return gini_group, gini_impurity
+        return gini_group, gini_impurity, option
 #                                            option
 def choose_the_root_with_gini_impurity (data, leaf, gini):
     new_group = [leaf, gini]
@@ -237,10 +237,11 @@ def choose_the_root_with_gini_impurity (data, leaf, gini):
         if head == "final_result":
             break
         info = data[head].describe()
-        gini_group, gini_impurity = gini_impurity_for_root (data, head, info.dtype)
+        gini_group, gini_impurity, option = gini_impurity_for_root (data, head, info.dtype)
         if gini_impurity < new_group[1]:
             new_group = [head, gini_impurity]
-
+    if info.dtype == float:
+        new_group[0] = option
 #####################
 #####################
 ###HEAD PROBLEM######
@@ -268,6 +269,9 @@ def connect_tree (new_root, rest):
     option = rest[1]
     draw_option = 0
     connection_head_option = 0
+
+
+
 
 '''
 data = train_set
