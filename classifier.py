@@ -1,5 +1,6 @@
 import sys
-
+#to draw the decision tree
+import pydot
 import inline as inline
 
 assert sys.version_info >= (3, 5)
@@ -127,7 +128,7 @@ high_uni = train_set["highest_education"].unique()
 for pra in high_uni:
     print(pra+": ", high[pra])
 
-'''
+#'''
 #need to be fixed
 print("\n", train_set["imd_band"].describe())
 imd = train_set["imd_band"].value_counts()
@@ -178,7 +179,7 @@ for pra4 in c_p_uni:
 head = test_set.head()
 for h in head:
     print(h)
-'''
+#'''
 
 def gini_impurity_for_leaf (left_side, total):
     gini = 1 - (left_side/total)**2 - (1-(left_side/total))**2
@@ -223,13 +224,14 @@ def gini_impurity_for_root (data, decision, type):
         total_num = len(ordered)
         gini_impurity = 1
         for num in range(0, total_num-2):
-            option = decision + " < " + str((data[decision][num]+data[decision[num+1]])/2)
+            f_option = decision + " < " + str((data[decision][num]+data[decision[num+1]])/2)
             new_gini_impurity, new_gini_group = gini_impurity_for_float (ordered, num)
             if new_gini_impurity < gini_impurity:
                 gini_impurity = new_gini_impurity
                 gini_group = new_gini_group
 
-        return gini_group, gini_impurity, option
+        return gini_group, gini_impurity, f_option
+
 #                                            option
 def choose_the_root_with_gini_impurity (data, leaf, gini):
     new_group = [leaf, gini]
@@ -237,11 +239,14 @@ def choose_the_root_with_gini_impurity (data, leaf, gini):
         if head == "final_result":
             break
         info = data[head].describe()
-        gini_group, gini_impurity, option = gini_impurity_for_root (data, head, info.dtype)
+        gini_group, gini_impurity, f_option = gini_impurity_for_root (data, head, info.dtype)
         if gini_impurity < new_group[1]:
             new_group = [head, gini_impurity]
+
+    info = data[new_group[0]].describe()
     if info.dtype == float:
-        new_group[0] = option
+        new_group[0] = f_option
+
 #####################
 #####################
 ###HEAD PROBLEM######
@@ -252,9 +257,15 @@ def choose_the_root_with_gini_impurity (data, leaf, gini):
         return [], []
     else:
         if leaf == "":
-            draw_leaf = new_group[0]
+            #draw the first head
+            new_head = pydot.Node(new_group[0], label="<"+new_group[0]+">", style="filled", fillcolor="grey")
+            graph.add_node(new_head)
         else:
-            connect_the_head_leaf = new_group[0]
+            #draw the new leaf
+            new_leaf = pydot.Node(new_group[0], label="<" + new_group[0] + ">", style="filled", fillcolor="grey")
+            graph.add_node(new_leaf)
+            graph.add_edge(pydot.Edge(leaf, new_leaf))
+
         result = []
         for re in gini_group:
             ###########         rest data,                     option, gini
@@ -266,12 +277,16 @@ def connect_tree (new_root, rest):
     ###   head
     if new_root[0] not in tree:
         draw_head = 0
-    option = rest[1]
-    draw_option = 0
-    connection_head_option = 0
 
+    for re in rest:
+        leaf = pydot.Node(re[1], label="<" + re[1] + ">", style="filled", fillcolor="grey")
+        graph.add_node(leaf)
+        graph.add_edge(pydot.Edge(new_root[0], leaf))
 
-
+graph = pydot.Dot(graph_type='graph')
+node_CON = pydot.Node("CON%d" % final, label="<CON>", style="filled", fillcolor="red")
+graph.add_node(node_CON)
+graph.add_edge(pydot.Edge("CON%d" % final, node_con))
 
 '''
 data = train_set
